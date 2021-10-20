@@ -1,46 +1,45 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
+﻿
+global using static Journeys.JourneyTaker;
+
 using static Journeys.Command;
 using static Journeys.Direction;
 
-namespace Journeys
+namespace Journeys;
+
+public static class JourneyTaker
 {
-    public static class JourneyTaker
-    {
-        public static Position MakeJourney(Position start, IEnumerable<Command> route)
-            => route.Aggregate(start, ApplyCommandToPosition);
+    public static Position MakeJourney(Position start, IEnumerable<Command> route)
+        => route.Aggregate(start, ApplyCommandToPosition);
 
-        private static Position ApplyCommandToPosition(Position position, Command command)
-            => (command, position) switch {
-                (Forward, { Facing: var facing, X: var x, Y: var y }) => GoForward(x, y, facing),
-                (Right, { Facing: var facing, X: var x, Y: var y }) => new Position(x, y, RotateRight(facing)),
-                (Left, { Facing: var facing, X: var x, Y: var y }) => new Position(x, y, RotateLeft(facing)),
-                _ => throw new SwitchExpressionException()
-            };
+    private static Position ApplyCommandToPosition(Position position, Command command) => command switch {
+            Forward => GoForward(position),
+            Right => position with { Facing = RotateRight(position) },
+            Left => position with { Facing = RotateLeft(position) },
+            _ => throw new ArgumentOutOfRangeException(nameof(command))
+        };
 
-        private static Position GoForward(int x, int y, Direction facing)
-            => facing switch {
-                East => new Position(x + 1, y, East),
-                South => new Position(x, y - 1, South),
-                West => new Position(x - 1, y, West),
-                _ => new Position(x, y + 1, North)
-            };
+    private static Position GoForward(Position position) => position.Facing switch {
+        East => position with { X = position.X + 1 },
+        South => position with { Y = position.Y - 1 },
+        West => position with { X = position.X - 1 },
+        North => position with { Y = position.Y + 1 },
+        _ => throw new ArgumentOutOfRangeException(nameof(position))
+    };
 
-        private static Direction RotateRight(Direction current)
-            => current switch {
-                East => South,
-                South => West,
-                West => North,
-                _ => East
-            };
+    private static Direction RotateRight(Position position) => position.Facing switch {
+        East => South,
+        South => West,
+        West => North,
+        North => East,
+        _ => throw new ArgumentOutOfRangeException(nameof(position))
+    };
 
-        private static Direction RotateLeft(Direction current)
-            => current switch {
-                East => North,
-                North => West,
-                West => South,
-                _ => East
-            };
-    }
+    private static Direction RotateLeft(Position position) => position.Facing switch {
+        East => North,
+        North => West,
+        West => South,
+        South => East,
+        _ => throw new ArgumentOutOfRangeException(nameof(position))
+    };
 }
+
